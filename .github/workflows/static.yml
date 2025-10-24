@@ -31,6 +31,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+# ⚠️ ÉTAPE 1 : Configuration de Node.js
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20" # Utilisez la version stable de Node.js
+          cache: 'npm'
+          
+      # ⚠️ ÉTAPE 2 : Installation des dépendances
+      - name: Install dependencies
+        run: npm install
+        
+      # ⚠️ ÉTAPE 3 : Construction du projet Vite/React
+      # Cette commande crée le dossier de sortie (généralement 'dist')
+      - name: Build project
+        run: npm run build
+        
+      # ⚠️ ÉTAPE 4 : Configuration du chemin de base pour GitHub Pages
+      # Nécessaire pour les SPAs (Applications à page unique) comme React/Vite
+      - name: Add 'dist' as a publish directory
+        run: echo "publish_dir: dist" >> $GITHUB_ENV
+        
+      # ⚠️ ÉTAPE 5 : Déploiement vers GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          # Note: Assurez-vous que le dossier de sortie est bien 'dist'
+          publish_dir: ./dist
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
