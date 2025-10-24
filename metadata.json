@@ -1,0 +1,5 @@
+{
+  "name": "OT Power & Capacity Management avec valeurs réelles",
+  "description": "A feature-rich, local-first DCIM web application for managing data center power chains (AC & DC) and capacity. It provides detailed analysis, risk assessment through failure simulation, and visual representation of power distribution and consumption.",
+  "requestFramePermissions": []
+}

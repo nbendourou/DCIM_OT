@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF--8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DCIM Power & Capacity Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF Libraries for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              // Palette based on https://ot-capacity-manager.vercel.app/
+              'primary': '#38bdf8', // sky-400
+              'primary-hover': '#0ea5e9', // sky-500
+              'ok-green': '#22c55e',
+              'warning-orange': '#f97316',
+              'danger-red': '#ef4444',
+              'dc-purple': '#a855f7',
+              'slate': {
+                900: '#0f172a', // Main background
+                800: '#1e293b', // Card background
+                700: '#334155', // Borders, dividers
+                600: '#475569', // UI elements, hover
+                500: '#64748b',
+                400: '#94a3b8', // Subtle text
+                300: '#cbd5e1', // Default text
+                200: '#e2e8f0',
+                100: '#f1f5f9', // Bright text
+              },
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      /* Custom focus-visible styles for better accessibility and visibility */
+      *:focus-visible {
+        outline: 2px solid #38bdf8; /* primary color */
+        outline-offset: 2px;
+        border-radius: 4px;
+      }
+      /* Remove outline for non-keyboard focus to avoid visual noise */
+      *:focus:not(:focus-visible) {
+        outline: none;
+      }
+      
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-900 text-slate-300">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
