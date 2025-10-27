@@ -56,6 +56,8 @@ export const MOCK_DATA: AllData = {
     { chaine: 'B', acp1: 8.1, acp2: 8.0, acp3: 8.2, dc: 4.0 },
     { chaine: 'C', acp1: 2.0, acp2: 2.1, acp3: 2.0, dc: 1.5 },
   ],
-  portsAlimentation: [],
-  cablageAlimentation: [],
+  utilisateurs: [
+    { id: 'U1', username: 'admin', role: 'admin' },
+    { id: 'U2', username: 'user', role: 'user' },
+  ],
 };

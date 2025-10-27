@@ -70,7 +70,9 @@ const PhaseImbalanceCard: React.FC<{
 };
 
 const TopAnomaliesCard: React.FC<{
-    topRacks: (Rack & { anomaly: RackPowerAnomaly })[];
+    // FIX: Changed the prop type from an intersection `(Rack & { anomaly: ... })[]` to a nested object `{ rack: Rack, anomaly: ... }[]`.
+    // This aligns the type definition with how the data is generated in `useMemo` and consumed via destructuring in the `map` function below, resolving two type errors.
+    topRacks: { rack: Rack; anomaly: RackPowerAnomaly }[];
     onSelectRack: (rack: Rack) => void;
 }> = ({ topRacks, onSelectRack }) => {
     return (

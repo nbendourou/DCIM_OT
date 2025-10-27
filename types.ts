@@ -96,6 +96,13 @@ export interface OtherConsumer {
   dc: number | string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  password?: string;
+  role: 'admin' | 'user';
+}
+
 export interface AllData {
   racks: Rack[];
   equipements: Equipment[];
@@ -104,8 +111,7 @@ export interface AllData {
   connexionsAC: ACConnection[];
   connexionsDC: DCConnection[];
   autresConsommateurs: OtherConsumer[];
-  portsAlimentation: any[];
-  cablageAlimentation: any[];
+  utilisateurs: User[];
 }
 
 export interface Capacities {
@@ -119,10 +125,10 @@ export interface Capacities {
     roomITN3_kW: number;
 }
 
-export type View = 'dashboard' | 'rooms' | 'capacity' | 'reporting' | 'settings';
+export type View = 'dashboard' | 'rooms' | 'capacity' | 'reporting' | 'settings' | 'account';
 
 export interface KeyMappingInfo {
-  canonicalKey: keyof AllData;
+  canonicalKey: keyof AllData | 'portsAlimentation' | 'cablageAlimentation';
   status: 'Trouvé' | 'Manquant';
   rawKeyFound?: string;
   rowCount: number;

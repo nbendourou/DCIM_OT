@@ -1,14 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { AllData, DiagnosticInfo, KeyMappingInfo, ACConnection, DCConnection } from '../types.ts';
+import type { AllData, DiagnosticInfo, KeyMappingInfo, ACConnection, DCConnection, User } from '../types.ts';
 import { MOCK_DATA } from '../mockData.ts';
 import { toNum } from '../utils/powerUtils.ts';
 
 // This URL must be configured with your own Google Apps Script web app URL.
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzhxvgEjc9vH5_-b5_egH26FRUXSlc_mnAV2J43gyuErCjfSlFi6Uqi-_MZwZ1uXDqXNA/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwOhVubzL3W-nOC1tZ5rgxnUq1mbipxeVa7a2_ibgAfS5AvF9d4tJALQmuff-Hry_9TDQ/exec';
 
 const CANONICAL_KEYS: (keyof AllData)[] = [
   'racks', 'equipements', 'boitiersAC', 'tableauxDC', 'connexionsAC',
-  'connexionsDC', 'autresConsommateurs', 'portsAlimentation', 'cablageAlimentation'
+  'connexionsDC', 'autresConsommateurs', 'utilisateurs'
 ];
 
 // Maps various possible incoming keys (lowercase) to the canonical key used in the app.
@@ -26,10 +26,7 @@ const KEY_MAPPINGS: { [rawKey: string]: keyof AllData } = {
   'autres_consommateurs': 'autresConsommateurs',
   'autresconsommateurs': 'autresConsommateurs',
   'otherconsumers': 'autresConsommateurs',
-  'ports_alimentation': 'portsAlimentation',
-  'portsalimentation': 'portsAlimentation',
-  'cablage_alimentation': 'cablageAlimentation',
-  'cablagealimentation': 'cablageAlimentation',
+  'utilisateurs': 'utilisateurs',
 };
 
 const normalizeObjectKeys = (obj: any): any => {
@@ -65,41 +62,66 @@ export const useGoogleSheetData = () => {
     setError(null);
 
     try {
-      // FIX: Made the fetch call more robust to prevent potential caching or CORS issues
-      // that can lead to a "Failed to fetch" error.
-      const response = await fetch(`${SCRIPT_URL}?action=readAll`, {
-        method: 'GET',
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
         mode: 'cors',
-        cache: 'no-cache', // Bypass cache which might be causing issues
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'text/plain',
+        },
+        body: JSON.stringify({ action: 'readAll' }),
       });
       if (!response.ok) {
         throw new Error(`Le serveur a répondu avec le statut ${response.status}`);
       }
-      const rawData = await response.json();
+      
+      const responseText = await response.text();
+      let rawData;
+
+      try {
+        rawData = JSON.parse(responseText);
+      } catch (jsonError) {
+        // This block catches errors when the response is not valid JSON (e.g., an HTML error page from Google)
+        throw new Error(`Réponse invalide du script Google. Le script a retourné : "${responseText.substring(0, 200)}..."`);
+      }
+
       if (rawData.error) {
         throw new Error(rawData.error);
       }
+      
+      // FIX: The script nests the response under a 'data' property. This unnests it.
+      const sheetData = rawData.data || rawData;
 
-      console.log("Raw data received from Google Sheets:", rawData);
+      console.log("Raw data received from Google Sheets:", sheetData);
 
       const normalizedData: Partial<AllData> = {};
-      const rawKeys = Object.keys(rawData);
+      const rawKeys = Object.keys(sheetData);
       
-      const newKeyMapping = CANONICAL_KEYS.map(canonicalKey => {
+      const allPossibleKeys: (keyof AllData | 'portsAlimentation' | 'cablageAlimentation')[] = [
+          ...CANONICAL_KEYS,
+          'portsAlimentation',
+          'cablageAlimentation'
+      ];
+
+      const newKeyMapping = allPossibleKeys.map(canonicalKey => {
           const mappingInfo: KeyMappingInfo = { canonicalKey, status: 'Manquant', rowCount: 0 };
           
+          if (!CANONICAL_KEYS.includes(canonicalKey as keyof AllData)) {
+              return mappingInfo; // Skip processing for removed keys, but keep for display
+          }
+
           const foundRawKey = rawKeys.find(rawKey => {
               const normalizedRawKey = rawKey.toLowerCase().replace(/_/g, '');
-              const targetKey = KEY_MAPPINGS[normalizedRawKey];
+              const targetKey = KEY_MAPPINGS[normalizedRawKey] || normalizedRawKey;
               return targetKey === canonicalKey;
           });
 
-          if (foundRawKey && Array.isArray(rawData[foundRawKey])) {
+          if (foundRawKey && Array.isArray(sheetData[foundRawKey])) {
               mappingInfo.status = 'Trouvé';
               mappingInfo.rawKeyFound = foundRawKey;
-              mappingInfo.rowCount = rawData[foundRawKey].length;
+              mappingInfo.rowCount = sheetData[foundRawKey].length;
               
-              let dataArray = rawData[foundRawKey].map(normalizeObjectKeys);
+              let dataArray = sheetData[foundRawKey].map(normalizeObjectKeys);
               
               if (canonicalKey === 'connexionsAC') {
                   dataArray = dataArray.map((conn: any) => {
@@ -145,10 +167,11 @@ export const useGoogleSheetData = () => {
                   }));
               }
               
-              normalizedData[canonicalKey] = dataArray;
+              normalizedData[canonicalKey as keyof AllData] = dataArray;
           }
           return mappingInfo;
-      });
+      }).filter(info => CANONICAL_KEYS.includes(info.canonicalKey as any));
+
 
       // FIX: Ensure all canonical keys exist on the data object, even if the sheet was empty or missing.
       // This prevents sending partial data on save, which was causing other data sheets to be overwritten.
@@ -178,47 +201,21 @@ export const useGoogleSheetData = () => {
       const payloadForGoogleSheet = JSON.parse(JSON.stringify(currentData));
 
       // FIX: Unify AC/DC connection object shapes to prevent backend data overwriting bug.
-      // By ensuring both connection types have the same set of keys, we protect against a faulty
-      // backend script that might reuse headers across different sheets during the save process.
-
-      // Transform AC Connections
       if (payloadForGoogleSheet.connexionsAC) {
         payloadForGoogleSheet.connexionsAC = payloadForGoogleSheet.connexionsAC.map((conn: ACConnection) => ({
-          // Shared fields
-          id: conn.id || '',
-          equipement_fk: conn.equipment_fk || '',
-          voie: conn.voie || '',
-          puissance_kw: conn.puissance_kw || 0,
-          // AC-specific fields
-          boitier_fk: conn.ac_box_fk || '',
-          prise_utilisee: conn.outlet_name || '',
-          phase: conn.phase || '',
-          // Add empty DC fields for shape consistency
-          tableau_dc_fk: '',
-          numero_disjoncteur: '',
-          calibre_a: '',
+          id: conn.id || '', equipement_fk: conn.equipment_fk || '', voie: conn.voie || '', puissance_kw: conn.puissance_kw || 0,
+          boitier_fk: conn.ac_box_fk || '', prise_utilisee: conn.outlet_name || '', phase: conn.phase || '',
+          tableau_dc_fk: '', numero_disjoncteur: '', calibre_a: '',
         }));
       }
       
-      // Transform DC Connections
       if (payloadForGoogleSheet.connexionsDC) {
         payloadForGoogleSheet.connexionsDC = payloadForGoogleSheet.connexionsDC.map((conn: DCConnection) => ({
-          // Shared fields
-          id: conn.id || '',
-          equipement_fk: conn.equipment_fk || '',
-          voie: conn.voie || '',
-          puissance_kw: conn.puissance_kw || 0,
-          // DC-specific fields
-          tableau_dc_fk: conn.dc_panel_fk || '',
-          numero_disjoncteur: conn.breaker_number || '',
-          calibre_a: conn.breaker_rating_a || '',
-          // Add empty AC fields for shape consistency
-          boitier_fk: '',
-          prise_utilisee: '',
-          phase: '',
+          id: conn.id || '', equipement_fk: conn.equipment_fk || '', voie: conn.voie || '', puissance_kw: conn.puissance_kw || 0,
+          tableau_dc_fk: conn.dc_panel_fk || '', numero_disjoncteur: conn.breaker_number || '', calibre_a: conn.breaker_rating_a || '',
+          boitier_fk: '', prise_utilisee: '', phase: '',
         }));
       }
-
 
       const response = await fetch(SCRIPT_URL, {
         method: 'POST',
@@ -236,10 +233,34 @@ export const useGoogleSheetData = () => {
       alert(`Erreur lors de la sauvegarde : ${err.message}`);
     }
   }, []);
+  
+  const login = useCallback(async (username, password): Promise<User> => {
+    const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'login', payload: { username, password } }),
+    });
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+    if (!result.data || !result.data.username || !result.data.role) throw new Error("Réponse de connexion invalide.");
+    return result.data as User;
+  }, []);
+
+  const changePassword = useCallback(async (username, oldPassword, newPassword): Promise<{success: boolean, message: string}> => {
+    const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'updatePassword', payload: { username, oldPassword, newPassword } }),
+    });
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+    return result;
+  }, []);
+
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  return { initialData, loading, error, refreshData: fetchData, saveData, diagnosticInfo };
+  return { initialData, loading, error, refreshData: fetchData, saveData, diagnosticInfo, login, changePassword };
 };
