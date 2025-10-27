@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import type { User, DiagnosticInfo } from '../types.ts';
+import type { User } from '../types.ts';
 import { PowerIcon, LoadingSpinnerIcon } from './icons.tsx';
 
 interface LoginProps {
   onLogin: (user: User) => void;
   loginFn: (username: string, password: string) => Promise<User>;
-  fetchError: string | null;
-  diagnosticInfo: DiagnosticInfo;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, loginFn, fetchError }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, loginFn }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,12 +43,6 @@ const Login: React.FC<LoginProps> = ({ onLogin, loginFn, fetchError }) => {
                 <h1 className="text-2xl font-bold text-slate-100">OT Power & Capacity</h1>
                 <p className="text-slate-400">Veuillez vous connecter pour continuer</p>
             </div>
-            
-            {fetchError && (
-                <div className="bg-warning-orange/20 border border-warning-orange text-warning-orange text-sm p-3 rounded-md mb-4 text-center">
-                    {fetchError}
-                </div>
-            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div>

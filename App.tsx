@@ -115,15 +115,14 @@ const App: React.FC = () => {
     };
     
     if (!currentUser) {
-        return <Login onLogin={handleLogin} loginFn={login} fetchError={error} diagnosticInfo={diagnosticInfo} />;
+        return <Login onLogin={handleLogin} loginFn={login} />;
     }
 
     if (loading && !allData) {
         return (
             <div className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center">
                 <LoadingSpinnerIcon className="w-12 h-12 text-primary mb-4" />
-                <p>Chargement des données depuis Google Sheets...</p>
-                {error && <p className="text-danger-red mt-2">{error}</p>}
+                <p>Chargement des données...</p>
             </div>
         );
     }
