@@ -5,9 +5,10 @@ import { PowerIcon, LoadingSpinnerIcon } from './icons.tsx';
 interface LoginProps {
   onLogin: (user: User) => void;
   loginFn: (username: string, password: string) => Promise<User>;
+  isDataLoading: boolean;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin, loginFn }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, loginFn, isDataLoading }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +51,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, loginFn }) => {
                     <input
                         id="username"
                         type="text"
+                        autoComplete="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
@@ -61,6 +63,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, loginFn }) => {
                     <input
                         id="password"
                         type="password"
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
@@ -83,10 +86,10 @@ const Login: React.FC<LoginProps> = ({ onLogin, loginFn }) => {
                 <div>
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || isDataLoading}
                         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-hover disabled:bg-slate-600 disabled:cursor-wait"
                     >
-                        {loading ? <LoadingSpinnerIcon className="w-5 h-5"/> : 'Se connecter'}
+                        {isDataLoading ? 'Connexion en cours...' : (loading ? <LoadingSpinnerIcon className="w-5 h-5"/> : 'Se connecter')}
                     </button>
                 </div>
             </form>

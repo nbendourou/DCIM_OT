@@ -19,7 +19,7 @@ import Login from './components/Login.tsx';
 
 const App: React.FC = () => {
     const { initialData, loading, error, refreshData, saveData, diagnosticInfo, login, changePassword } = useGoogleSheetData();
-    const [allData, setAllData] = useState<AllData | null>(initialData);
+    const [allData, setAllData] = useState<AllData | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [view, setView] = useState<View>('dashboard');
     const [capacities, setCapacities] = useState<Capacities>(MOCK_CAPACITIES);
@@ -30,6 +30,7 @@ const App: React.FC = () => {
 
     const { rackUtilizations, dcPanelUtilizations, acBoxUtilizations, rackPowerAnomalies } = usePowerCalculations(allData, capacities);
 
+    // This effect runs once on mount to load the persisted user session
     useEffect(() => {
         const savedUser = sessionStorage.getItem('currentUser');
         if (savedUser) {
@@ -37,6 +38,7 @@ const App: React.FC = () => {
         }
     }, []);
 
+    // This effect processes the data once it's fetched from Google Sheets
     useEffect(() => {
         if (initialData) {
             const recalculatedRacks = initialData.racks.map(rack => 
@@ -114,10 +116,13 @@ const App: React.FC = () => {
         }
     };
     
+    // Show login screen immediately, while data loads in the background.
+    // Pass the loading state to the Login component to disable the button until ready.
     if (!currentUser) {
-        return <Login onLogin={handleLogin} loginFn={login} />;
+        return <Login onLogin={handleLogin} loginFn={login} isDataLoading={loading} />;
     }
 
+    // After login, if data is still loading (or failed and fell back to mock), show a loading screen.
     if (loading && !allData) {
         return (
             <div className="bg-slate-900 text-slate-100 min-h-screen flex flex-col items-center justify-center">
@@ -127,6 +132,7 @@ const App: React.FC = () => {
         );
     }
 
+    // Main application view
     return (
         <div className="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
             <Navbar view={view} setView={setView} onSave={handleSave} onRefresh={refreshData} isSaving={isSaving} isRefreshing={loading} currentUser={currentUser} onLogout={handleLogout} />

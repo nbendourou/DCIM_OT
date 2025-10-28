@@ -70,20 +70,18 @@ export const Navbar: React.FC<NavbarProps> = ({ view, setView, onSave, onRefresh
               )}
               {isRefreshing ? 'Actualisation...' : 'Actualiser'}
             </button>
-            {currentUser?.role === 'admin' && (
-                <button
-                  onClick={onSave}
-                  disabled={isSaving || isRefreshing}
-                  className="w-full flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-ok-green hover:bg-green-600 disabled:bg-slate-500 transition"
-                >
-                  {isSaving ? (
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  ) : (
-                    <SaveIcon className="w-5 h-5 mr-2" />
-                  )}
-                  {isSaving ? 'Enregistrement...' : 'Enregistrer'}
-                </button>
-            )}
+            <button
+              onClick={onSave}
+              disabled={isSaving || isRefreshing}
+              className="w-full flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-ok-green hover:bg-green-600 disabled:bg-slate-500 transition"
+            >
+              {isSaving ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+              ) : (
+                <SaveIcon className="w-5 h-5 mr-2" />
+              )}
+              {isSaving ? 'Enregistrement...' : 'Enregistrer'}
+            </button>
              <button
                 onClick={onLogout}
                 className="px-3 py-2 text-sm font-medium rounded-md text-slate-300 hover:bg-slate-700 hover:text-white"
